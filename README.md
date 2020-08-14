@@ -15,7 +15,7 @@ One needs to build the spark-base image:
 ```bash
 cd spark/base/
 docker build -t spark-base .
-cd ..
+cd ../../
 ```
 
 Then start docker compose in the background:
