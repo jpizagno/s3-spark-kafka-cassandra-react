@@ -8,6 +8,9 @@ The log lines, in the Kafka topic="log-streamer-out", are persisted to Cassandra
 
 Nothing happends until a file is uploaded to the S3 bucket.  
 
+### UML Data Flow
+![alt text](https://github.com/jpizagno/s3-spark-kafka-cassandra-react/blob/master/UML/uml.png?raw=true)
+
 
 ### Build and Run
 One needs to build the spark-base image:
