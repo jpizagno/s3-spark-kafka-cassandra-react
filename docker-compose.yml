@@ -1,0 +1,136 @@
+version: '3.7'
+
+services:
+
+  spark-master:
+    build: ./spark/master/
+    container_name: master
+    command: bin/spark-class org.apache.spark.deploy.master.Master -h master
+    hostname: master
+    environment:
+      MASTER: spark://master:7077
+      SPARK_CONF_DIR: /conf
+      SPARK_PUBLIC_DNS: localhost
+    expose:
+      - 7001
+      - 7002
+      - 7003
+      - 7004
+      - 7005
+      - 7077
+      - 6066
+    ports:
+      - 4040:4040
+      - 4041:4041
+      - 4042:4042
+      - 6066:6066
+      - 7077:7077
+      - 8080:8080  # spark-master WebUI  http://localhost:8080
+    volumes:
+      - ./spark/master/conf:/conf
+      - ./spark/master/data:/tmp/data
+
+  spark-worker:
+    build: ./spark/worker/
+    container_name: spark-worker
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    hostname: worker
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 6g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_PUBLIC_DNS: localhost
+    links:
+      - spark-master
+    expose:
+      - 7012
+      - 7013
+      - 7014
+      - 7015
+      - 8881
+    ports:
+      - 8081:8081
+    volumes:
+      - ./spark/worker/conf:/conf
+      - ./spark/worker/data:/tmp/data
+
+  kafka:
+    build: ./kafka
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "2188:2188"
+
+  kafka-manager:
+    build: ./kafka-manager
+    container_name: kafka-manager
+    hostname: kafka-manager
+    ports:
+      - "9001:9000"
+    environment: 
+      - ZK_HOSTS=kafka:2188
+    depends_on:
+      - "kafka"
+
+  kafka-proxy:
+    build: ./kafka-proxy-ws
+    container_name: kafkaproxy
+    hostname: kafkaproxy
+    depends_on:
+      - "kafka"
+    ports:
+      - 9998:9998
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    hostname: frontend
+    depends_on:
+      - "kafka"
+    ports:
+      - 3000:3000
+
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    hostname: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - "MAX_HEAP_SIZE=256M"
+      - "HEAP_NEWSIZE=128M"
+    restart: always
+    volumes:
+      - ./cassandra_out/cassandra_data:/var/lib/cassandra
+
+  cassandra-load-keyspace:
+    container_name: cassandra-load-keyspace
+    image: cassandra:latest
+    depends_on:
+      - cassandra
+    volumes:
+      - ./cassandra/keyspace_ddl.cql:/keyspace_ddl.cql
+    command: /bin/bash -c "sleep 60 && echo loading cassandra keyspace && cqlsh cassandra -f /keyspace_ddl.cql"
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  log-persister:
+    build: ./log-persister
+    container_name: log-persister
+    hostname: log-persister
+    depends_on:
+      - kafka
+      - cassandra
+    deploy:
+      restart_policy:
+        condition: always
+        delay: 30s
+        max_attempts: 3
+        window: 120s

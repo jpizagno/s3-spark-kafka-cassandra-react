@@ -1,0 +1,14 @@
+FROM spark-base:latest
+
+ENV KAFKA_BOOTSTRAP_SERVER=kafka:9092
+ENV ZOOKEEPER_QUORUM=kafka
+ENV ZOOKEEPER_CLIENT_PORT=2188
+ENV KAFKA_INPUT_TOPIC=huginn_aggregated
+ENV KAFKA_OUTPUT_TOPIC=huginn_added_tfidf
+ENV COSSIM_MATCH=0.3
+ENV NUM_DOCS_LOAD_START=1000
+ENV TIME_IN_POLL=100
+ENV GROUP_ID=group-id-tfidf-consumer-1
+ENV SESSION_TIMEOUT_MILLISEC=30000
+
+CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]
