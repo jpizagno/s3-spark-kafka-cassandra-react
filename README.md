@@ -28,8 +28,9 @@ nohup ./docker-compose-run.sh > docker-compose-run.log 2>&1 &
 *wait*:  Building all the Docker images and running apps will take about 20 Minutes.  
 
 Then submit Spark Job:
+*Note*:  need to have Java and [sbt](https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Linux.html) installed:  
 ```bash
-nohup ./start_log_streamers.sh {AWS-key}  {AWS-secret} {S3 bucket name like: s3a://huginns-news-logs/} > start_log_streamers.log 2>&1 &
+nohup ./start_log_streamer.sh {AWS-key}  {AWS-secret} {S3 bucket name like: s3a://huginns-news-logs/} > start_log_streamer.log 2>&1 &
 ```
 
 When a new file is uploaded/written to the S3 bucket, it will get picked up by the Spark job, produced into Kafka, pushed to the ReactJS app, and persisted to Cassandra.
